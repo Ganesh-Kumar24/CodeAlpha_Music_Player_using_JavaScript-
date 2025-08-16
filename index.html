@@ -1,0 +1,269 @@
+e<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title> Music Player</title>
+<style>
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .player {
+    background: #1f2937;
+    border-radius: 15px;
+    padding: 25px;
+    width: 350px;
+    box-shadow: 0 0 20px #00bcd4aa;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .song-info {
+    text-align: center;
+  }
+  .song-info h2 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
+  .song-info h3 {
+    margin: 4px 0 0;
+    font-weight: 400;
+    color: #00bcd4;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+  }
+  button {
+    background: none;
+    border: none;
+    color: #00bcd4;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  button:hover {
+    color: #80deea;
+  }
+  .progress-container {
+    background: #374151;
+    height: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    position: relative;
+  }
+  .progress {
+    background: #00bcd4;
+    height: 100%;
+    width: 0%;
+    border-radius: 10px;
+  }
+  .time {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #9ca3af;
+  }
+  .volume-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  input[type="range"] {
+    width: 100px;
+  }
+  .playlist {
+    max-height: 160px;
+    overflow-y: auto;
+    border-top: 1px solid #374151;
+    padding-top: 10px;
+  }
+  .playlist-item {
+    padding: 8px 5px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+  }
+  .playlist-item:hover {
+    background-color: #00bcd488;
+    color: #111827;
+  }
+  .playlist-item.active {
+    background-color: #00bcd4;
+    color: #111827;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="player">
+  <div class="song-info">
+    <h2 id="title">Loading...</h2>
+    <h3 id="artist"></h3>
+  </div>
+
+  <audio id="audio"></audio>
+
+  <div class="progress-container" id="progress-container">
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="time">
+    <span id="current-time">0:00</span>
+    <span id="duration">0:00</span>
+  </div>
+
+  <div class="controls">
+    <button id="prev" title="Previous">&#9664;&#9664;</button>
+    <button id="play" title="Play/Pause">&#9658;</button>
+    <button id="next" title="Next">&#9654;&#9654;</button>
+  </div>
+
+  <div class="volume-container">
+    <label for="volume">Volume:</label>
+    <input type="range" id="volume" min="0" max="1" step="0.01" value="1" />
+  </div>
+
+  <div class="playlist" id="playlist"></div>
+</div>
+
+<script>
+  // Update these filenames to match your downloaded MP3 files
+  const songs = [
+    { title: "A dil hai mushkil", artist: "Arijit Singh", src: "song1.mp3" },
+    { title: "Teri meri kahani", artist: "Arijit Singh", src: "song2.mp3" },
+    { title: "Phir bhi tumko chahunga", artist: "Arijit Singh", src: "song3.mp3" }
+  ];
+
+  const audio = document.getElementById('audio');
+  const titleEl = document.getElementById('title');
+  const artistEl = document.getElementById('artist');
+  const playBtn = document.getElementById('play');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const progressContainer = document.getElementById('progress-container');
+  const progress = document.getElementById('progress');
+  const currentTimeEl = document.getElementById('current-time');
+  const durationEl = document.getElementById('duration');
+  const volumeSlider = document.getElementById('volume');
+  const playlistEl = document.getElementById('playlist');
+
+  let currentIndex = 0;
+  let isPlaying = false;
+
+  function loadSong(index) {
+    const song = songs[index];
+    titleEl.textContent = song.title;
+    artistEl.textContent = song.artist;
+    audio.src = song.src;
+    updateActivePlaylist();
+  }
+
+  function playSong() {
+    audio.play();
+    isPlaying = true;
+    playBtn.innerHTML = "&#10074;&#10074;"; // pause icon
+  }
+
+  function pauseSong() {
+    audio.pause();
+    isPlaying = false;
+    playBtn.innerHTML = "&#9658;"; // play icon
+  }
+
+  playBtn.addEventListener('click', () => {
+    if(isPlaying) {
+      pauseSong();
+    } else {
+      playSong();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => {
+    currentIndex--;
+    if(currentIndex < 0) currentIndex = songs.length - 1;
+    loadSong(currentIndex);
+    playSong();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    currentIndex++;
+    if(currentIndex >= songs.length) currentIndex = 0;
+    loadSong(currentIndex);
+    playSong();
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if(audio.duration) {
+      const progressPercent = (audio.currentTime / audio.duration) * 100;
+      progress.style.width = `${progressPercent}%`;
+
+      currentTimeEl.textContent = formatTime(audio.currentTime);
+      durationEl.textContent = formatTime(audio.duration);
+    }
+  });
+
+  progressContainer.addEventListener('click', (e) => {
+    const width = progressContainer.clientWidth;
+    const clickX = e.offsetX;
+    const duration = audio.duration;
+    audio.currentTime = (clickX / width) * duration;
+  });
+
+  volumeSlider.addEventListener('input', (e) => {
+    audio.volume = e.target.value;
+  });
+
+  audio.addEventListener('ended', () => {
+    nextBtn.click();
+  });
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60) || 0;
+    const secs = Math.floor(seconds % 60) || 0;
+    return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+  }
+
+  function buildPlaylist() {
+    songs.forEach((song, i) => {
+      const div = document.createElement('div');
+      div.classList.add('playlist-item');
+      div.textContent = `${song.title} - ${song.artist}`;
+      div.addEventListener('click', () => {
+        currentIndex = i;
+        loadSong(currentIndex);
+        playSong();
+      });
+      playlistEl.appendChild(div);
+    });
+  }
+
+  function updateActivePlaylist() {
+    const items = document.querySelectorAll('.playlist-item');
+    items.forEach((item, i) => {
+      if(i === currentIndex) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  // Initialize
+  buildPlaylist();
+  loadSong(currentIndex);
+</script>
+
+</body>
+</html>
